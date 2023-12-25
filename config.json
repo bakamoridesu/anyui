@@ -2,15 +2,15 @@
     "command": "python",
     "args": [
         {
-            "configurable": true,
-            "param": "param1"
+            "param": "param1",
+            "default": "value1" 
         }
     ],
     "flags": [
         {
             "name": "--silent",
-            "configurable": true,
-            "param": "param2"
+            "param": "param2",
+            "default": "value2"
         }
     ]
 }
