@@ -1,0 +1,16 @@
+{
+    "command": "python",
+    "args": [
+        {
+            "configurable": true,
+            "param": "param1"
+        }
+    ],
+    "flags": [
+        {
+            "name": "--silent",
+            "configurable": true,
+            "param": "param2"
+        }
+    ]
+}
