@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"time"
 )
 
 type arg struct {
@@ -39,6 +38,38 @@ func (c config) String() string {
 	return fmt.Sprintf("command:%s\n%s\n%s", c.Command, args, flags)
 }
 
+func command(cfg config, r *http.Request) (*exec.Cmd, error) {
+	cParams := []string{}
+	cName := cfg.Command
+	cPath, err := exec.LookPath(cName)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, flag := range cfg.Flags {
+		value := ""
+		if r.FormValue(flag.Param) != "" {
+			value = r.FormValue(flag.Param)
+		} else if flag.Default != "" {
+			value = flag.Default
+		}
+		if value != "" {
+			cParams = append(cParams, flag.Name+"="+value)
+		}
+	}
+
+	for _, arg := range cfg.Args {
+		value := ""
+		if r.FormValue(arg.Param) != "" {
+			value = r.FormValue(arg.Param)
+		} else {
+			value = arg.Default
+		}
+		cParams = append(cParams, value)
+	}
+	return exec.Command(cPath, cParams...), nil
+}
+
 func run() error {
 	cfg := &config{}
 	cfgFile, err := os.Open("config.json")
@@ -51,7 +82,6 @@ func run() error {
 		return err
 	}
 
-	fmt.Println(cfg)
 	// check if template found
 
 	cName, cParams := GetOpen()
@@ -62,21 +92,14 @@ func run() error {
 	}
 
 	go func() {
-		time.Sleep(2 * time.Second)
 		exec.Command(cPath, cParams...).Run()
 	}()
 
 	s := http.Server{
-		Addr: "127.0.0.1:8080",
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.Method == http.MethodPost {
-				fmt.Println(r.Form)
-				fmt.Println(r.FormValue("input1"))
-			}
-			http.ServeFile(w, r, "template.html")
-		}),
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		Addr:    "127.0.0.1:8080",
+		Handler: Handler(cfg),
+		// ReadTimeout:  10 * time.Second,
+		// WriteTimeout: 10 * time.Second,
 	}
 	if err := s.ListenAndServe(); err != nil {
 		return err

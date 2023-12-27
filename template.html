@@ -1,14 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
 </head>
+
 <body>
-   <form method="post">
-    <input id="input1" name="input1" type="text"/>
-    <input type="submit" />
-   </form> 
+    <div class="container">
+        <form id="dataform">
+            <input id="param1" name="param1" type="text" />
+            <input id="param2" name="param2" type="text" />
+        </form>
+        <div class="footer">
+            <textarea tabindex="-1" class="output" id="output"></textarea>
+            <button onclick="postData(); this.blur()">Send</button>
+        </div>
+    </div>
 </body>
+
 </html>
+
+<style>
+    .container {
+        display: flex;
+        flex-direction: column;
+        width: 650px;
+        gap: 20px;
+    }
+
+    .footer {
+        display: flex;
+        flex-direction: row;
+        height: 80px;
+        gap: 15px;
+    }
+
+    form {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    input {
+        width: 100%;
+    }
+
+    textarea {
+        height: 100%;
+        flex: 1;
+    }
+
+    button {
+        width: 100px;
+        height: 40px;
+        font-size: 24px;
+    }
+</style>
+<script>
+    function postData() {
+        const dataElement = document.getElementById('output')
+        dataElement.innerHTML = ""
+        var data = new FormData(document.getElementById("dataform"))
+        fetch("/", {
+            method: "post",
+            body: data
+        })
+    }
+</script>
+<script>
+    const eventSource = new EventSource('/events');
+    eventSource.onmessage = function (event) {
+        const dataElement = document.getElementById('output');
+        dataElement.innerHTML += event.data + '\n';
+    };
+    window.addEventListener('beforeunload', () => {
+        eventSource.close();
+    });
+</script>
