@@ -15,7 +15,7 @@
         </form>
         <div class="footer">
             <textarea tabindex="-1" class="output" id="output"></textarea>
-            <button onclick="postData(); this.blur()">Send</button>
+            <button onclick="postData(); this.blur()" id="btnSubmit">Send</button>
         </div>
     </div>
 </body>
@@ -60,23 +60,60 @@
     }
 </style>
 <script>
-    function postData() {
-        const dataElement = document.getElementById('output')
-        dataElement.innerHTML = ""
-        var data = new FormData(document.getElementById("dataform"))
-        fetch("/", {
-            method: "post",
-            body: data
-        })
+    var eventSource
+    var sleepTimer
+    var id = Math.floor(Math.random() * 10000)
+
+    function sleep(ms) {
+        clearInterval(sleepTimer)
+        return new Promise(resolve => sleepTimer = setTimeout(resolve, ms))
     }
-</script>
-<script>
-    const eventSource = new EventSource('/events');
-    eventSource.onmessage = function (event) {
-        const dataElement = document.getElementById('output');
-        dataElement.innerHTML += event.data + '\n';
-    };
+
+    function setupEventSource() {
+        eventSource = new EventSource(`/events?id=${id}`);
+        eventSource.onmessage = function (event) {
+            console.log("message?")
+            const dataElement = document.getElementById('output');
+            dataElement.innerHTML += event.data + '\n';
+        };
+        eventSource.onopen = function(event) {
+            console.log(event)
+        }
+        eventSource.onerror = function(event) {
+            console.log(event)
+        }
+        eventSource.addEventListener('done', function(){
+            document.getElementById("btnSubmit").disabled = false
+        })
+        eventSource.addEventListener('restart', function(){console.log("CONNECTED")})
+    }
+
+    async function connectEventSource() {
+        while (eventSource.readyState != EventSource.OPEN) {
+            console.log("waiting for open....")
+            setupEventSource()
+            await sleep(2000)
+        }
+    }
+
+    setupEventSource()
+
     window.addEventListener('beforeunload', () => {
         eventSource.close();
     });
+    function postData() {
+        const btn = document.getElementById("btnSubmit").disabled = true
+        const dataElement = document.getElementById('output')
+        console.log("es", eventSource)
+        if (eventSource.readyState == EventSource.CLOSED) {
+            connectEventSource()
+        }
+        dataElement.innerHTML = ""
+        var data = new FormData(document.getElementById("dataform"))
+        data.append("id", id)
+        fetch("/", {
+            method: "post",
+            body: data,
+        })
+    }
 </script>
