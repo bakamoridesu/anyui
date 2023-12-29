@@ -71,6 +71,8 @@ outerloop:
 
 func Handler(cfg *config) http.Handler {
 	m := http.NewServeMux()
+	fs := http.FileServer(http.Dir("public"))
+	m.Handle("/public/", http.StripPrefix("/public/", fs))
 	m.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			id, err := strconv.Atoi(r.FormValue("id"))
