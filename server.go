@@ -15,11 +15,13 @@ var buffers = make(map[int]*Buffer)
 type Buffer struct {
 	buf      *bytes.Buffer
 	finalLen int
+	start    chan bool
 }
 
 func registerBuffer(id int) {
 	var newBuf bytes.Buffer
-	buffers[id] = &Buffer{&newBuf, 0}
+	start := make(chan bool)
+	buffers[id] = &Buffer{&newBuf, 0, start}
 }
 
 func unregisterBuffer(id int) {
@@ -50,12 +52,14 @@ outerloop:
 				prevLen = buf.Len()
 			}
 			if buffers[bufId].finalLen != 0 && buffers[bufId].finalLen == buf.Len() {
-				time.Sleep(1 * time.Second)
 				ch <- fmt.Sprintf("event:done\ndata:%s\n\n", "finished")
 				prevLen = 0
 				buffer.finalLen = 0
 				buf.Reset()
+				ticker.Stop()
 			}
+		case <-buffer.start:
+			ticker = time.NewTicker(time.Second)
 		case <-ctx.Done():
 			break outerloop
 		}
@@ -90,6 +94,7 @@ func Handler(cfg *config) http.Handler {
 			cmd.Stderr = buf
 			cmd.Stdout = buf
 			go func() {
+				buffer.start <- true
 				err = cmd.Run()
 				if err != nil {
 					fmt.Println("Running command failed", err)
