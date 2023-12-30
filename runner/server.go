@@ -1,4 +1,4 @@
-package main
+package runner
 
 import (
 	"bytes"
@@ -69,7 +69,7 @@ outerloop:
 	close(ch)
 }
 
-func Handler(cfg *config) http.Handler {
+func Handler(cfg *config, template string) http.Handler {
 	m := http.NewServeMux()
 	fs := http.FileServer(http.Dir("public"))
 	m.Handle("/public/", http.StripPrefix("/public/", fs))
@@ -106,7 +106,7 @@ func Handler(cfg *config) http.Handler {
 			}()
 			return
 		}
-		http.ServeFile(w, r, "template.html")
+		http.ServeFile(w, r, template)
 	})
 
 	m.HandleFunc("/events", func(w http.ResponseWriter, r *http.Request) {
