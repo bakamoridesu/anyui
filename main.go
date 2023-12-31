@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"bakamori.com/anyui/builder"
 	"bakamori.com/anyui/runner"
 )
 
@@ -33,6 +34,7 @@ func main() {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
+	} else {
+		builder.Run()
 	}
-
 }

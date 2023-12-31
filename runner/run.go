@@ -7,7 +7,11 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+
+	"bakamori.com/anyui/open"
 )
+
+const address = "127.0.0.1:8080"
 
 type arg struct {
 	Param   string `json:"param"`
@@ -101,19 +105,9 @@ func (r Runner) Run() error {
 
 	// check if template found
 
-	cName, cParams := GetOpen()
-	cParams = append(cParams, "http://127.0.0.1:8080")
-	cPath, err := exec.LookPath(cName)
-	if err != nil {
-		return err
-	}
-
-	go func() {
-		exec.Command(cPath, cParams...).Run()
-	}()
-
+	open.Open(address)
 	s := http.Server{
-		Addr:    "127.0.0.1:8080",
+		Addr:    address,
 		Handler: Handler(cfg, r.template),
 		// ReadTimeout:  10 * time.Second,
 		// WriteTimeout: 10 * time.Second,
